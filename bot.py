@@ -6,7 +6,7 @@ from aiohttp import (
 from colorama import *
 from datetime import datetime
 from fake_useragent import FakeUserAgent
-import asyncio, json, os, random, pytz
+import asyncio, json, os, time, random, pytz
 
 wib = pytz.timezone('Asia/Jakarta')
 
