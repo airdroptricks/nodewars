@@ -709,6 +709,20 @@ class NodeWars:
                             log_id = start['gameLogId']
                             time_spent = random.randint(25000, 30000)
 
+                            delay = random.randint(5, 10)
+                            for remaining in range(delay, 0, -1):
+                                print(
+                                    f"{Fore.CYAN + Style.BRIGHT}[ {datetime.now().astimezone(wib).strftime('%x %X %Z')} ]{Style.RESET_ALL}"
+                                    f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                                    f"{Fore.MAGENTA + Style.BRIGHT}[ Wait for{Style.RESET_ALL}"
+                                    f"{Fore.YELLOW + Style.BRIGHT} {remaining} {Style.RESET_ALL}"
+                                    f"{Fore.WHITE + Style.BRIGHT}Seconds to Finish Game{Style.RESET_ALL}"
+                                    f"{Fore.MAGENTA + Style.BRIGHT} ]{Style.RESET_ALL}  ",
+                                    end="\r",
+                                    flush=True
+                                )
+                                await asyncio.sleep(1)
+
                             finish = await self.finish_game(query, session_id, action_logs, collected_tokens, log_id, score, game_id, time_spent)
                             if finish:
                                 level_up = finish['isLevelUp']
@@ -749,7 +763,7 @@ class NodeWars:
                             )
                             break
 
-                        delay = random.randint(10,15)
+                        delay = random.randint(15, 20)
                         for remaining in range(delay, 0, -1):
                             print(
                                 f"{Fore.CYAN + Style.BRIGHT}[ {datetime.now().astimezone(wib).strftime('%x %X %Z')} ]{Style.RESET_ALL}"
