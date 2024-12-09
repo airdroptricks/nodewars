@@ -152,6 +152,38 @@ class NodeWars:
                 else:
                     return None
     
+    async def do_checkin(self, query: str, retries=5):
+        url = 'https://nodewars.nodepay.ai/missions/daily/do'
+        data = json.dumps({"actionCode":"checkin"})
+        headers = {
+            **self.headers,
+            'Authorization': f'Bearer {query}',
+            'Content-Length': str(len(data)),
+            'Content-Type': 'application/json'
+        }
+        for attempt in range(retries):
+            try:
+                async with ClientSession(timeout=ClientTimeout(total=20)) as session:
+                    async with session.post(url=url, headers=headers, data=data) as response:
+                        if response.status == 400:
+                            return None
+                        
+                        response.raise_for_status()
+                        result = await response.json()
+                        return result['code']
+            except (Exception, ClientResponseError) as e:
+                if attempt < retries - 1:
+                    print(
+                        f"{Fore.RED + Style.BRIGHT}ERROR.{Style.RESET_ALL}"
+                        f"{Fore.YELLOW + Style.BRIGHT} Retrying... {Style.RESET_ALL}"
+                        f"{Fore.WHITE + Style.BRIGHT}[{attempt+1}/{retries}]{Style.RESET_ALL}",
+                        end="\r",
+                        flush=True
+                    )
+                    await asyncio.sleep(3)
+                else:
+                    return None
+                
     async def claim_checkin(self, query: str, session_id: str, mission_id: str, retries=5):
         url = 'https://nodewars.nodepay.ai/missions/daily/claim'
         data = json.dumps({"missionId":mission_id})
@@ -166,8 +198,12 @@ class NodeWars:
             try:
                 async with ClientSession(timeout=ClientTimeout(total=20)) as session:
                     async with session.post(url=url, headers=headers, data=data) as response:
+                        if response.status == 400:
+                            return None
+                        
                         response.raise_for_status()
-                        await response.json()
+                        result = await response.json()
+                        return result['code']
             except (Exception, ClientResponseError) as e:
                 if attempt < retries - 1:
                     print(
@@ -441,19 +477,21 @@ class NodeWars:
                 )
                 await asyncio.sleep(1)
 
+                await self.do_checkin(query)
+
                 check_in = await self.daily_checkin(query, session_id)
                 if check_in:
-                    new_day = next((item for item in check_in['items'] if item['status'] == 'new'), None)
-                    if new_day:
-                        mission_id = new_day['id']
-                        is_claimed = check_in.get('isClaimedToday', None)
+                    is_claimed = check_in.get("isClaimedToday", None)
 
-                        if is_claimed is None:
+                    if not is_claimed:
+                        new_day = next((item for item in check_in["items"] if item["status"] == "new"), None)
+                        if new_day:
+                            mission_id = new_day["id"]
                             claim = await self.claim_checkin(query, session_id, mission_id)
-                            if claim:
+                            if claim and claim == "success":
                                 self.log(
                                     f"{Fore.MAGENTA + Style.BRIGHT}[ Check-In{Style.RESET_ALL}"
-                                    f"{Fore.WHITE + Style.BRIGHT} Day 1 {Style.RESET_ALL}"
+                                    f"{Fore.WHITE + Style.BRIGHT} Day {check_in['streakDays']} {Style.RESET_ALL}"
                                     f"{Fore.GREEN + Style.BRIGHT}Is Claimed{Style.RESET_ALL}"
                                     f"{Fore.MAGENTA + Style.BRIGHT} ] [ Reward{Style.RESET_ALL}"
                                     f"{Fore.WHITE + Style.BRIGHT} {new_day['reward']} War Coins {Style.RESET_ALL}"
@@ -462,42 +500,22 @@ class NodeWars:
                             else:
                                 self.log(
                                     f"{Fore.MAGENTA + Style.BRIGHT}[ Check-In{Style.RESET_ALL}"
-                                    f"{Fore.WHITE + Style.BRIGHT} Day 1 {Style.RESET_ALL}"
+                                    f"{Fore.WHITE + Style.BRIGHT} Day {check_in['streakDays']} {Style.RESET_ALL}"
                                     f"{Fore.RED + Style.BRIGHT}Isn't Claimed{Style.RESET_ALL}"
                                     f"{Fore.MAGENTA + Style.BRIGHT} ]{Style.RESET_ALL}"
                                 )
-
                         else:
-                            if not is_claimed:
-                                claim = await self.claim_checkin(query, session_id, mission_id)
-                                if claim:
-                                    self.log(
-                                        f"{Fore.MAGENTA + Style.BRIGHT}[ Check-In{Style.RESET_ALL}"
-                                        f"{Fore.WHITE + Style.BRIGHT} Day {check_in['streakDays']} {Style.RESET_ALL}"
-                                        f"{Fore.GREEN + Style.BRIGHT}Is Claimed{Style.RESET_ALL}"
-                                        f"{Fore.MAGENTA + Style.BRIGHT} ] [ Reward{Style.RESET_ALL}"
-                                        f"{Fore.WHITE + Style.BRIGHT} {new_day['reward']} War Coins {Style.RESET_ALL}"
-                                        f"{Fore.MAGENTA + Style.BRIGHT}]{Style.RESET_ALL}"
-                                    )
-                                else:
-                                    self.log(
-                                        f"{Fore.MAGENTA + Style.BRIGHT}[ Check-In{Style.RESET_ALL}"
-                                        f"{Fore.WHITE + Style.BRIGHT} Day {check_in['streakDays']} {Style.RESET_ALL}"
-                                        f"{Fore.RED + Style.BRIGHT}Isn't Claimed{Style.RESET_ALL}"
-                                        f"{Fore.MAGENTA + Style.BRIGHT} ]{Style.RESET_ALL}"
-                                    )
-                            else:
-                                self.log(
-                                    f"{Fore.MAGENTA + Style.BRIGHT}[ Check-In{Style.RESET_ALL}"
-                                    f"{Fore.WHITE + Style.BRIGHT} Day {check_in['streakDays']} {Style.RESET_ALL}"
-                                    f"{Fore.YELLOW + Style.BRIGHT}Is Already Claimed{Style.RESET_ALL}"
-                                    f"{Fore.MAGENTA + Style.BRIGHT} ]{Style.RESET_ALL}"
-                                )
+                            self.log(
+                                f"{Fore.MAGENTA + Style.BRIGHT}[ Check-In{Style.RESET_ALL}"
+                                f"{Fore.GREEN + Style.BRIGHT} Is Completed {Style.RESET_ALL}"
+                                f"{Fore.MAGENTA + Style.BRIGHT} ]{Style.RESET_ALL}"
+                            )
                     else:
                         self.log(
                             f"{Fore.MAGENTA + Style.BRIGHT}[ Check-In{Style.RESET_ALL}"
-                            f"{Fore.GREEN + Style.BRIGHT} Is Completed {Style.RESET_ALL}"
-                            f"{Fore.MAGENTA + Style.BRIGHT}]{Style.RESET_ALL}"
+                            f"{Fore.WHITE + Style.BRIGHT} Day {check_in['streakDays']} {Style.RESET_ALL}"
+                            f"{Fore.YELLOW + Style.BRIGHT}Is Already Claimed{Style.RESET_ALL}"
+                            f"{Fore.MAGENTA + Style.BRIGHT} ]{Style.RESET_ALL}"
                         )
                 else:
                     self.log(
