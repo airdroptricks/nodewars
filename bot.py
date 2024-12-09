@@ -6,7 +6,7 @@ from aiohttp import (
 from colorama import *
 from datetime import datetime
 from fake_useragent import FakeUserAgent
-import asyncio, json, os, time, random, pytz
+import asyncio, json, os, random, pytz
 
 wib = pytz.timezone('Asia/Jakarta')
 
@@ -691,7 +691,7 @@ class NodeWars:
                                 f"{Fore.MAGENTA + Style.BRIGHT}[ Game{Style.RESET_ALL}"
                                 f"{Fore.WHITE + Style.BRIGHT} Level {level} {Style.RESET_ALL}"
                                 f"{Fore.GREEN + Style.BRIGHT}Is Started{Style.RESET_ALL}"
-                                f"{Fore.MAGENTA + Style.BRIGHT} ]{Style.RESET_ALL}"
+                                f"{Fore.MAGENTA + Style.BRIGHT} ]{Style.RESET_ALL}                           "
                             )
                             
                             token_lists = [
@@ -735,7 +735,7 @@ class NodeWars:
                                     f"{Fore.MAGENTA + Style.BRIGHT}[ Game{Style.RESET_ALL}"
                                     f"{Fore.WHITE + Style.BRIGHT} Level {level} {Style.RESET_ALL}"
                                     f"{Fore.RED + Style.BRIGHT}Isn't Finished{Style.RESET_ALL}"
-                                    f"{Fore.MAGENTA + Style.BRIGHT} ]{Style.RESET_ALL}"
+                                    f"{Fore.MAGENTA + Style.BRIGHT} ]{Style.RESET_ALL}          "
                                 )
 
                             level += 1
@@ -745,11 +745,23 @@ class NodeWars:
                                 f"{Fore.MAGENTA + Style.BRIGHT}[ Game{Style.RESET_ALL}"
                                 f"{Fore.WHITE + Style.BRIGHT} Level {level} {Style.RESET_ALL}"
                                 f"{Fore.RED + Style.BRIGHT}Isn't Started{Style.RESET_ALL}"
-                                f"{Fore.MAGENTA + Style.BRIGHT} ]{Style.RESET_ALL}"
+                                f"{Fore.MAGENTA + Style.BRIGHT} ]{Style.RESET_ALL}           "
                             )
                             break
 
-                        time.sleep(3)
+                        delay = random.randint(10,15)
+                        for remaining in range(delay, 0, -1):
+                            print(
+                                f"{Fore.CYAN + Style.BRIGHT}[ {datetime.now().astimezone(wib).strftime('%x %X %Z')} ]{Style.RESET_ALL}"
+                                f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                                f"{Fore.MAGENTA + Style.BRIGHT}[ Wait for{Style.RESET_ALL}"
+                                f"{Fore.YELLOW + Style.BRIGHT} {remaining} {Style.RESET_ALL}"
+                                f"{Fore.WHITE + Style.BRIGHT}Seconds to Start Next Game{Style.RESET_ALL}"
+                                f"{Fore.MAGENTA + Style.BRIGHT} ]{Style.RESET_ALL}  ",
+                                end="\r",
+                                flush=True
+                            )
+                            await asyncio.sleep(1)
 
                     if level == 101:
                         self.log(
